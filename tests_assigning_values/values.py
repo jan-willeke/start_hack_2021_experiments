@@ -347,7 +347,7 @@ def dist(a,b,length):
 """""
 
 # defining weight factors
-factors ={
+std_factors = {
     'ment_supp': -1,
     'overwhelmed': -1,
     'anxiety': -1,
@@ -363,11 +363,55 @@ factors ={
     'prog_langs': 1,
     'intro_extro': -1,
     'soft_hard_learn': 1,
-    'skills_learn': 1,
+    'skills_to_learn': 1,
     'soft_hard_already': 1,
     'skills_already': 1,
     'skills_project_general': 1,
     'skills_project_needed': 1,
+}
+hobbies_factors = {
+    'ment_supp': 0,
+    'overwhelmed': 0,
+    'anxiety': 0,
+    'trust': 0,
+    'friendship': 0,
+    'help': 0,
+    'advice': 0,
+    'sleep': 0,
+    'exercise': 0,
+    'hobbies': 1,
+    'comp_exp': 0,
+    'field_exp': 0,
+    'prog_langs': 0,
+    'intro_extro': 0,
+    'soft_hard_learn': 0,
+    'skills_to_learn': 0,
+    'soft_hard_already': 0,
+    'skills_already': 0,
+    'skills_project_general': 0,
+    'skills_project_needed': 0,
+}
+lang_factors = {
+    'ment_supp': 0,
+    'overwhelmed': 0,
+    'anxiety': 0,
+    'trust': 0,
+    'friendship': 0,
+    'help': 0,
+    'advice': 0,
+    'sleep': 0,
+    'exercise': 0,
+    'hobbies': 0,
+    'comp_exp': 0,
+    'field_exp': 0,
+    'prog_langs': 1,
+    'intro_extro': 0,
+    'soft_hard_learn': 0,
+    'skills_to_learn': 0,
+    'soft_hard_already': 0,
+    'skills_already': 0,
+    'skills_project_general': 0,
+    'skills_project_needed': 0,
 }
 
 critical = ['hobbies','prog_langs','skills_to_learn','skills_already','skills_project_general','skills_project_needed', 'soft_hard_learn','soft_hard_already']
@@ -391,7 +435,7 @@ def hobby_matrix(hobby_dict):
     mat1 = np.zeros((dim,dim))
     for i in range(0,dim):
         for j in range(i,dim):
-            mat1[i,j] = mat1[j,i] = 1./(2**(min(j-i, dim - (j-i))))
+            mat1[i,j] = mat1[j,i] = 1./(2**(min((j-i), dim - (j-i))))
     mat2 = np.identity(dim)
     count = 0
     for x in hobby_dict:
@@ -425,7 +469,7 @@ def get_user_by_name(user_dict, name):
 vec_factors = np.array([])
 
 # Generating a vector from the factors given by the factors dictionary
-def gen_vec(user,dim):
+def gen_vec(user,dim,factors):
     vec_factors = np.array([])
     for feat in user:
         # if feat == 'hobbies' or feat == 'programming_lan' or feat == 'skills_learn' or feat == 'skills_already':
@@ -471,7 +515,7 @@ def gen_vec_from_array(array, dim,dictionary):
 
 
 # generating the matching factor contributions for the critical objects
-def critical_factors(user1, user2):
+def critical_factors(user1, user2,factors):
     dim_skills = len(skills)
     dim_hobbies = len(hobbies)
     dim_langs = len(proglangs)
@@ -490,29 +534,29 @@ def critical_factors(user1, user2):
     skill_mat = skill_matrix(skills)
 
     hobby_contribution = np.matmul(np.matmul(user1_hobbies.T, hobby_matrix(hobbies)),user2_hobbies)
-    skills_contribution = (np.matmul(np.matmul(user1_skills_learn.T, skill_mat), user2_skills_already) + np.matmul(np.matmul(user2_skills_learn.T, skill_mat), user1_skills_already)) / 2.
-    soft_hard_contribution = (abs(user1['soft_hard_learn'] - user2['soft_hard_already']) + abs(user2['soft_hard_learn']  - user1['soft_hard_already'])) / 2.
-    prog_langs_contribution = np.matmul(user1_prog_langs.T, user2_prog_langs)
+    skills_contribution = (np.matmul(np.matmul(user1_skills_learn.T, skill_mat), user2_skills_already) * factors['skills_to_learn'] + np.matmul(np.matmul(user2_skills_learn.T, skill_mat), user1_skills_already)* factors['skills_already']) / 2.
+    soft_hard_contribution = (abs(user1['soft_hard_learn'] - user2['soft_hard_already']) * factors['soft_hard_learn'] + abs(user2['soft_hard_learn']  - user1['soft_hard_already']) * factors['soft_hard_already']) / 2.
+    prog_langs_contribution = np.matmul(user1_prog_langs.T, user2_prog_langs) * factors['prog_langs']
     # project_contribution = ( np.array(user1['skills_already']).T * np.array(user2['skills_project_needed']) + np.array(user2['skills_already']).T * np.array(user1['skills_project_needed']) ) / 2.
 
     # return skills_contribution + hobby_contribution + soft_hard_contribution + prog_langs_contribution + project_contribution
-    return skills_contribution + hobby_contribution + soft_hard_contribution + prog_langs_contribution
+    return skills_contribution + hobby_contribution * factors['hobbies'] + soft_hard_contribution + prog_langs_contribution
 
     
 
 # Generating the matching factor for each user combination
-def matching_factor(id1,id2):
+def matching_factor(id1,id2,factors):
     user1 = gen_user_vec(get_user_by_id(users,id1))
     user2 = gen_user_vec(get_user_by_id(users,id2))
     # factor = np.matmul(np.matmul(user1, np.diag(list(factors.values()))),user2) / (norm(user1) * norm(user2))
-    factor = np.matmul(np.matmul(user1, np.diag(gen_vec(get_user_by_id(users,id1),len(user1)))),user2) / (norm(user1) * norm(user2)) 
+    factor = np.matmul(np.matmul(user1, np.diag(gen_vec(get_user_by_id(users,id1),len(user1),factors))),user2) / (norm(user1) * norm(user2)) 
     # factor = np.matmul(np.matmul(user1, np.identity(len(user1))),user2) / (norm(user1) * norm(user2))
-    factor += critical_factors(get_user_by_id(users,id1), get_user_by_id(users,id2))
+    factor += critical_factors(get_user_by_id(users,id1), get_user_by_id(users,id2),factors)
     return factor
 
 
 # Adding a new user to an existing matrix
-def new_user(id):
+def new_user(id,factors):
     existing_matrix = np.genfromtxt('mat.csv', delimiter=',')
     n = len(existing_matrix[0,:])
     list_of_ids = np.array([])
@@ -523,13 +567,13 @@ def new_user(id):
     new_matrix = np.vstack((new_matrix, np.atleast_2d(np.zeros(n+1))))
 
     for i in range(0,n):
-        coefficient = matching_factor(list_of_ids[i],id)
+        coefficient = matching_factor(list_of_ids[i],id,factors)
         new_matrix[i,n] = coefficient
         new_matrix[n,i] = coefficient
 
     np.savetxt("mat.csv",new_matrix, delimiter=',')  
 
-def init_mat():
+def init_mat(factors):
     n = len(users)
     list_of_ids = np.array([])
     for i in users:
@@ -537,13 +581,20 @@ def init_mat():
     mat = np.zeros((n,n))
     for i in range(0,n):
         for j in range(i + 1,n):
-            coeff = matching_factor(list_of_ids[i],list_of_ids[j])
+            coeff = matching_factor(list_of_ids[i],list_of_ids[j],factors)
             mat[i,j] = mat[j,i] = coeff
     np.savetxt("mat.csv",mat,delimiter=',')
 
 
-        
 
-init_mat()
+#__________DEFINE THE USED FACTORS FOR THE ALGORITHM + RUN___________
+
+factors = {
+    'std': std_factors,
+    'hobbies': hobbies_factors,
+    'prog_lang': lang_factors,
+}
+
+init_mat(factors['prog_lang'])
 # new_user(3.)
 
