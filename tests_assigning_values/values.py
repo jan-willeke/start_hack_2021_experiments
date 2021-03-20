@@ -439,8 +439,8 @@ def gen_vec(user,dim):
     return vec_factors
 
 
-def gen_matrix():
-    factor_matrix = np.diag(vec_factors)
+# def gen_matrix():
+#     factor_matrix = np.diag(vec_factors)
 
 
 # generating a numpy vector depending on the elements from the dictionary
