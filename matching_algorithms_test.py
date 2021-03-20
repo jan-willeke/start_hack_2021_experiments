@@ -90,15 +90,71 @@ def pick_nodes_onboarding(G, indx_user, n_new_connections): ### user is not part
 
 
 def match_making_friday_informal_meeting(G, indx_user, n_new_connections):
+    new_connections = []
+    G0 = G ## G0 is component in with the node indx_user is
     if not nx.is_connected(G): ## if the network is split into several components, connect to a different component
         S = [G.subgraph(c).copy() for c in nx.connected_components(G)]
-        S_sizes = np.array([c.size() for c in S])
-        size_order_indx = np.argsort(S_sizes)
-        S_sizes = S_sizes[size_order_indx][::-1]
-        S = [S[i] for i in size_order_indx[::-1]]    
+        G0 = [i for i in S if indx_user in i][0]
+               
+        if len(S) > n_new_connections +1: ### pick other people at random from different components in the network
+            S_others = [i for i in S if not indx_user in i]
+            new_connections_subgraph = random.sample(S_others, n_new_connections)
+            new_connections = [random.choice([j for j in i.nodes]) for i in new_connections_subgraph]
         
-       # if len(S) > n_new_connections - 1: ### pick other people at random from different components in the network
+        else:
+            S_others = [i for i in S if not indx_user in i]
+            new_connections = [random.choice([j for j in i.nodes]) for i in S_others]
+   
+    
+    nodes_picked = []
+    if len(new_connections) < n_new_connections: ### find nodes in the same component that are far from each other
+        n_nodes_to_find = n_new_connections - len(new_connections)
+        nodes_at_highest_distance = sort_nodes_distance(G, indx_user)[: 2 *n_nodes_to_find]
+        distance_matrix = np.zeros((2*n_nodes_to_find, 2*n_nodes_to_find))
+        for i in range(len(nodes_at_highest_distance)):
+            for j in range(i +1, len(nodes_at_highest_distance)):
+                node0 = nodes_at_highest_distance[i]
+                node1 = nodes_at_highest_distance[j]
+                s = nx.shortest_path_length(G0, node0, node1)
+                distance_matrix[i][j] = s
+                distance_matrix[j][i] = s
+                
+        nodes_picked = []
+        max_pair = np.unravel_index(np.argmax(distance_matrix, axis=None), distance_matrix.shape)
+        nodes_picked.append(max_pair[0])
+        nodes_picked.append(max_pair[1])
+        
+        while len(nodes_picked) < n_nodes_to_find:
+            indx_node_1 = nodes_picked[-1]
+            indx_node_2 = nodes_picked[-2]
             
+            max_new_list = np.argsort(distance_matrix[indx_node_1])[::-1]
+            max_new_list = [i for i in max_new_list if i not in nodes_picked]       
+            nodes_picked.append(max_new_list[0])
+            
+            max_new_list = np.argsort(distance_matrix[indx_node_2])[::-1]
+            max_new_list = [i for i in max_new_list if i not in nodes_picked]       
+            nodes_picked.append(max_new_list[0])
+            
+        nodes_picked = nodes_picked[:n_new_connections]
+            
+    new_connections = np.concatenate((new_connections, nodes_picked))
+    new_connections = new_connections.astype(np.int32)
+    
+    return new_connections
+    
+                
+                
+                
+        
+        
+        
+        
+        
+        
+            
+        
+        
    # else:
         
     
@@ -144,11 +200,12 @@ def find_nodes_high_distance_same_component(G, indx_user):
     
     return nodes_at_highest_distance
 
-def sort_nodes_distance(G, indx_user):
+def sort_nodes_distance(G, indx_user): ## return a dict
     dist_dict = nx.single_source_shortest_path_length(G, indx_user, cutoff=None)
     highest_distance = max(dist_dict.values())
-    nodes_at_distance_sorted = [[k for k, v in dist_dict.items() if v == i]  for i in np.arange(1, highest_distance +1)[::-1]]
+    nodes_at_distance_sorted = [[k for k, v in dist_dict.items() if v == i] for i in np.arange(1, highest_distance +1)[::-1]]
     nodes_at_distance_sorted = [item for sublist in nodes_at_distance_sorted for item in sublist]
+    #nodes_at_distance_sorted = dict(sorted(dist_dict.items(), reverse=True, key=lambda item: item[1]))
     
     return nodes_at_distance_sorted
     
@@ -159,6 +216,8 @@ def find_nodes_similarity(feature_matrix, feature_mask, indx_user):
     X = feature_matrix*feature_mask    
     similarity = cosine_similarity(X)    
     nodes_similarity = similarity[indx_user]    
+
+
 
 
 
