@@ -570,6 +570,7 @@ def new_user(id,factors):
         coefficient = matching_factor(list_of_ids[i],id,factors)
         new_matrix[i,n] = coefficient
         new_matrix[n,i] = coefficient
+    new_matrix[n,n] = matching_factor(id,id,factors)
 
     np.savetxt("mat.csv",new_matrix, delimiter=',')  
 
@@ -580,7 +581,8 @@ def init_mat(factors):
         list_of_ids = np.append(list_of_ids, i['id'])
     mat = np.zeros((n,n))
     for i in range(0,n):
-        for j in range(i + 1,n):
+        # for j in range(i + 1,n):
+        for j in range(i,n):
             coeff = matching_factor(list_of_ids[i],list_of_ids[j],factors)
             mat[i,j] = mat[j,i] = coeff
     np.savetxt("mat.csv",mat,delimiter=',')
