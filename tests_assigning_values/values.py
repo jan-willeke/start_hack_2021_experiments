@@ -28,33 +28,51 @@ company['employees'] = []
 
 hobbies = {
     "programming": 0,
-    "reading": 1,
-    "outdoor sports": 2,
-    "indoor sports": 3,
-    "writing": 4,
-    "board games": 5,
-    "cooking": 6,
-    "video editing": 7,
-    "painting": 8,
-    "gaming": 9,
-    "meditating": 10,
-    "collecting": 11,
+    "gaming": 1,
+    "board games": 2,
+    "reading": 3,
+    "painting": 4,
+    "writing": 5,
+    "meditating": 6,
+    "collecting": 7,
+    "cooking": 8,
+    "outdoor sports": 9,
+    "indoor sports": 10,
+    "video editing": 11,
 }
 
 lan = {
-    'python': 0,
-    'cpp': 1,
-    'java': 2,
-    'julia': 3,
-    'r': 4,
-    'html': 5,
-    'css': 6,
-    'c': 7,
-    'c_sharp': 8,
-    'fortran': 9,
-    'pascal': 10,
-    'php': 11,
-    'latex': 12,
+    'r': 0,
+    'python': 1,
+    'julia': 2,
+    'cpp': 3,
+    'c': 4,
+    'c_sharp': 5,
+    'java': 6,
+    'fortran': 7,
+    'pascal': 8,
+    'html': 9,
+    'php': 10,
+    'latex': 11,
+    'css': 12,
+}
+
+skills ={
+    "communication": 0,
+    "interpersonal": 1,
+    "empathy": 2,
+    "creativity": 3,
+    "teamwork": 4,
+    "open_mind": 5,
+    "ui_ux": 6,
+    "programming": 7,
+    "critical_thinking": 8,
+    "research": 9,
+    "adaptability": 10,
+    "marketing": 11,
+    "leadership": 12,
+    "management": 13,
+    "team_building": 14,
 }
 
 with open('data.json') as json_file:
@@ -70,11 +88,20 @@ with open('data.json') as json_file:
             'advice': p['advice'] / 100.,
             'sleep': p['sleep'] / 10.,
             'exercise': p['exercise'] / 4.,
-            'hobbies': [hobbies.get(str(x)) for x in p['hobbies']],
+            'hobbies': [hobbies.get(str(x).lower()) for x in p['hobbies']],
             'comp_exp': p['comp_experience'] / 50.,
             'field_exp': p['field_exp'] / 50.,
-            'programming_lan': [lan.get(str(x)) for x in p['programming_lan']],
+            'programming_lan': [lan.get(str(x).lower()) for x in p['programming_lan']],
+            'intro_extro': p['intro_extro'] / 100,
+            'soft_hard_learn': p['soft_hard_learn'] / 100,
+            'skills_learn': [skills.get(str(x).lower()) for x in p['skills_learn']],
+            'soft_hard_already': p['soft_hard_already'] / 100,
+            'skills_already': [skills.get(str(x).lower()) for x in p['skills_already']],
+            'skills_project_general': [skills.get(str(x).lower()) for x in p['skills_project_general']],
+            'skills_project_needed': [skills.get(str(x).lower()) for x in p['skills_project_needed']],
         })
         print(company)
         print('success')
         
+def dist(a,b,length):
+    return min(abs(a-b), 15 - abs(a-b))
